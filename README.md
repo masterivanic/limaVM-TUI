@@ -152,40 +152,20 @@ Press `?` inside the application at any time to open the help overlay.
 | `r` | Refresh network table |
 | `1` / `Esc` | Return to Dashboard |
 
----
 
-## Architecture
+## To Run vm terminal in web interface
 
+1. Install tty
+
+```bash
+limactl shell instane-name -- sudo curl -L \
+  https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.x86_64 \
+  -o /usr/local/bin/ttyd
+limactl shell instane-name -- sudo chmod +x /usr/local/bin/ttyd
 ```
-limavm-tui/
-├── cmd/
-│   └── limavm-tui/       # main.go: CLI flags, store initialization, Bubble Tea program runner
-├── internal/
-│   ├── limactl/          # Typed wrapper for all limactl CLI commands via os/exec
-│   │   ├── exec.go       # Command execution, context timeout, NDJSON stream decoder
-│   │   ├── types.go      # Typed data structures (Instance, Disk, Network, Snapshot, Info)
-│   │   ├── instance.go   # VM lifecycle commands (list, start, stop, delete, clone, rename)
-│   │   ├── disk.go       # Disk commands (list, create, delete, resize, unlock)
-│   │   ├── network.go    # Virtual network commands (list, create, delete)
-│   │   ├── snapshot.go   # Snapshot commands (list, create, apply, delete)
-│   │   ├── template.go   # Template discovery and description extraction from comments
-│   │   └── misc.go       # Diagnostic info, prune, and YAML validation
-│   ├── ui/
-│   │   ├── app.go        # Root model: screen routing, key dispatch, modal overlays, ExecProcess
-│   │   ├── common/       # Messages and cross-screen events (zero circular dependencies)
-│   │   ├── dashboard/    # Main VM table view with live polling and filter
-│   │   ├── detail/       # 5-tab VM inspection view (Overview, Disks, Network, Snapshots, YAML)
-│   │   ├── createvm/     # Creation form: template picker with preview & custom YAML path
-│   │   ├── networks/     # Dedicated network management view
-│   │   └── components/   # HelpBar, Toast notifications, ConfirmDialog, PromptDialog, Spinner, Modals
-│   ├── theme/            # Unified Lip Gloss dark palette (borders, badges, selection, toasts)
-│   └── store/            # Atomic JSON persistence for favorites and recent preferences
-├── Makefile              # make build / test / vet / install
-└── Dockerfile            # CI cross-compilation container (build-only)
+2. Run tty
+```bash
+limactl shell ansible-rocky9 -- ttyd -p 7681 -W bash
 ```
 
----
-
-## License
-
-Apache 2.0 or MIT.
+3. Create service to persist terminal in web UI
