@@ -75,6 +75,7 @@ func (h HelpModal) View() string {
 				{"1", "Dashboard (VM List)"},
 				{"2", "Networks Screen"},
 				{"3", "Create VM Form"},
+				{"4", "VM Profiles Screen"},
 				{"I", "Host Info & Diagnostics"},
 				{"P", "Prune Unused Resources"},
 				{"?", "Toggle this Help overlay"},
@@ -115,6 +116,16 @@ func (h HelpModal) View() string {
 				{"r", "Resize (Disk)"},
 				{"u", "Unlock (Disk)"},
 				{"a", "Apply / Restore (Snapshot)"},
+			},
+		},
+		{
+			header: "VM Profiles Screen",
+			keys: [][2]string{
+				{"Up / Down", "Select profile or provisioning mode"},
+				{"Tab", "Switch between profiles and modes"},
+				{"u", "Start the VM declared by the profile"},
+				{"h", "Run the profile health check"},
+				{"p / Enter", "Run the selected provisioning mode"},
 			},
 		},
 	}

@@ -21,6 +21,7 @@ Like `k9s` or `lazydocker`, `limavm-tui` is a single static binary, single proce
   - **YAML**: Live view of `lima.yaml` with one-key edit in `$EDITOR` (`e`) and automatic validation.
 - **VM Creation Wizard**: Template catalog with live description preview, or custom YAML path/URL input with override fields for CPU, Memory, and Disk.
 - **Networks Screen**: Dedicated management of virtual networks (`limactl network create/delete`).
+- **VM Profiles**: Drive an external Lima harness (its own template, scripts and provisioning steps) straight from the TUI, declared in a small YAML profile file that the harness repository ships itself. See [Profiles](#profiles).
 - **Prune & Diagnostics**: Maintenance actions behind confirmation dialogs (`P` to prune unused objects, `I` for diagnostic host info).
 - **Persistent Local Preferences**: Favorites and last-used template saved in a small local JSON file (`~/.local/share/limavm-tui/state.json`).
 
@@ -72,6 +73,8 @@ limavm-tui --refresh 2s --data-dir ~/.config/limavm-tui --log /tmp/limavm.log
 |---|---|---|
 | `--refresh` | `3s` | Polling interval for instance and network live status |
 | `--data-dir` | `~/.local/share/limavm-tui` | Directory storing persistent state (favorites, last-used template) |
+| `--profile` | — | Path to a VM profile file, or a directory containing `lima-ui.profile.yaml`. Repeatable. See [Profiles](#profiles) |
+| `--config` | `~/.config/limavm-tui/config.yaml` | Config file listing profile search paths |
 | `--log` | `""` | Optional debug log file path |
 | `--version` | `false` | Print version and build metadata |
 | `-h`, `--help`| — | Show help information |
@@ -89,6 +92,7 @@ Press `?` inside the application at any time to open the help overlay.
 | `1` | Jump to **Dashboard** (VM list) |
 | `2` | Jump to **Networks** screen |
 | `3` | Jump to **Create VM** form |
+| `4` | Jump to **Profiles** screen |
 | `I` | Open **Host Diagnostics & Info** modal |
 | `P` | **Prune** unused Lima objects (with confirmation) |
 | `?` | Toggle **Help Overlay** |
@@ -152,6 +156,125 @@ Press `?` inside the application at any time to open the help overlay.
 | `r` | Refresh network table |
 | `1` / `Esc` | Return to Dashboard |
 
+### Profiles Screen (`4`)
+
+| Key | Action |
+|---|---|
+| `↑` / `↓` | Select a profile (left pane) or a provisioning mode (right pane) |
+| `Tab` | Switch focus between profiles and provisioning modes |
+| `u` | Start the VM declared by the profile (`lifecycle.create`) |
+| `h` | Run the profile health check (`lifecycle.healthCheck`) |
+| `p` / `Enter` | Run the selected provisioning mode |
+| `Esc` | Return to Dashboard |
+
+---
+
+## Profiles
+
+A **profile** lets `limavm-tui` drive an existing Lima *harness* — a repository that
+already owns a Lima template, some provisioning scripts and a `make`-based workflow —
+without that knowledge being baked into this tool.
+
+The harness repository ships a single YAML file (conventionally `lima-ui.profile.yaml`
+at its root) describing where its template and scripts are and what they do. Nothing is
+copied or vendored: `limavm-tui` only needs the path to that file.
+
+```sh
+# Point at the profile file, or at the directory containing it
+limavm-tui --profile ~/sources/pro/rdb-dev/lima-ui.profile.yaml
+limavm-tui --profile ~/sources/pro/rdb-dev
+
+# Repeat the flag to load several harnesses at once
+limavm-tui --profile ~/sources/pro/rdb-dev --profile ~/sources/pro/other-harness
+```
+
+To avoid retyping the flag, list search paths in `~/.config/limavm-tui/config.yaml`:
+
+```yaml
+profilePaths:
+  - ~/sources/pro/rdb-dev
+  - ~/sources/pro/other-harness/lima-ui.profile.yaml
+```
+
+Then press **`4`** in the TUI to open the Profiles screen: pick a profile, start its VM
+(`u`), run its health check (`h`) and run one of its provisioning modes (`p`). Each
+action runs the harness' own script with the terminal handed over to it, so its output
+is streamed live exactly as if it had been launched from a shell.
+
+### Profile schema
+
+```yaml
+apiVersion: v1                        # required, currently always "v1"
+name: rdb-dev                         # required, shown in the profile list
+description: Rocky 9 VM harness for testing RDB products
+vmName: ansible-rocky9                # required, the Lima instance name
+
+template:
+  source: lima/ansible-rocky9.yaml.in # the harness' Lima template
+  output: vm_config/ansible-rocky9.yaml  # where the rendered YAML is produced
+  render:                             # optional custom rendering step
+    script: scripts/render-lima-template.sh
+    args: ["${TEMPLATE_OUT}", "${VM_TYPE}", "..."]
+
+defaults:                             # exposed to commands as placeholders
+  vmType: qemu
+  mountType: reverse-sshfs
+  arch: x86_64
+  rosetta: "false"
+  cpus: 4
+  memory: 6G
+  disk: 40G
+  configDir: config
+  workspaceDir: workspace
+  portForward: ""
+
+mounts:                               # documented for display
+  - host: config
+    guest: /opt/ansible-test/provisioning
+
+lifecycle:
+  create:                             # brings the VM up
+    script: scripts/vm-up.sh
+    args: ["${VM_NAME}", "${TEMPLATE_OUT}", "..."]
+  healthCheck:                        # verifies the VM is usable
+    script: scripts/vm-check.sh       # args default to ["${VM_NAME}"]
+
+provisioningModes:                    # named, ordered sequences of steps
+  - name: standalone-rdb
+    description: Install RPMs and load podman images
+    steps:
+      - script: scripts/vm-install-standalone-rpms.sh
+      - script: scripts/vm-load-podman-images.sh
+```
+
+`lifecycle.create` is an escape hatch: a harness that already owns its bring-up logic
+(rendering, port forwarding, post-creation fixups) declares its own script here, and it
+is delegated to as-is rather than reimplemented — so no behaviour is lost or duplicated.
+
+### Placeholders
+
+Command arguments may reference these, expanded from `vmName` and `defaults`:
+
+`${VM_NAME}` · `${PROFILE_NAME}` · `${PROFILE_ROOT}` · `${VM_TYPE}` · `${MOUNT_TYPE}` ·
+`${ARCH}` · `${ROSETTA}` · `${CPUS}` · `${MEMORY}` · `${DISK}` · `${CONFIG_DIR}` ·
+`${WORKSPACE_DIR}` · `${PORT_FORWARD}` · `${TEMPLATE_OUT}` · `${TEMPLATE_SRC}`
+
+When a command declares no `args`, it defaults to `["${VM_NAME}"]`, the calling
+convention of most harness scripts.
+
+### Execution model
+
+- Scripts run with the **profile directory as working directory**, so a harness can call
+  its sibling scripts and resolve its assets through relative paths as usual.
+- Arguments are passed as **argv, never through a shell**, so a profile cannot inject
+  shell syntax and values containing spaces stay a single argument.
+- Every path a profile references **must stay inside the profile directory**, must exist
+  and (for scripts) must be executable. A profile causes external programs to run, so it
+  is not allowed to point outside its own repository.
+- Provisioning steps run **one at a time**; a failing step aborts the remaining sequence.
+- A profile that fails to load is **reported**, in the terminal at startup and in the
+  Profiles screen, rather than silently ignored.
+
 ---
 
 ## Architecture
@@ -170,6 +293,10 @@ limavm-tui/
 │   │   ├── snapshot.go   # Snapshot commands (list, create, apply, delete)
 │   │   ├── template.go   # Template discovery and description extraction from comments
 │   │   └── misc.go       # Diagnostic info, prune, and YAML validation
+│   ├── profile/          # Generic VM profile mechanism (external harness integration)
+│   │   ├── profile.go    # Schema, path containment, placeholder expansion
+│   │   ├── loader.go     # YAML loading and validation
+│   │   └── discovery.go  # --profile sources and optional user config file
 │   ├── ui/
 │   │   ├── app.go        # Root model: screen routing, key dispatch, modal overlays, ExecProcess
 │   │   ├── common/       # Messages and cross-screen events (zero circular dependencies)
@@ -177,6 +304,7 @@ limavm-tui/
 │   │   ├── detail/       # 5-tab VM inspection view (Overview, Disks, Network, Snapshots, YAML)
 │   │   ├── createvm/     # Creation form: template picker with preview & custom YAML path
 │   │   ├── networks/     # Dedicated network management view
+│   │   ├── profiles/     # Profiles screen: harness lifecycle and provisioning modes
 │   │   └── components/   # HelpBar, Toast notifications, ConfirmDialog, PromptDialog, Spinner, Modals
 │   ├── theme/            # Unified Lip Gloss dark palette (borders, badges, selection, toasts)
 │   └── store/            # Atomic JSON persistence for favorites and recent preferences
