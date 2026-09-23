@@ -17,6 +17,7 @@ const (
 	ScreenDetail
 	ScreenCreateVM
 	ScreenNetworks
+	ScreenProfiles
 )
 
 // NavigateMsg requests switching the active screen.
@@ -80,4 +81,20 @@ type RefreshVMsMsg struct {
 type TemplatesLoadedMsg struct {
 	Templates []limactl.Template
 	Err       error
+}
+
+// ProfileStepFinishedMsg reports the completion of a single profile step.
+//
+// Steps of a provisioning mode run one after another rather than in a single
+// shell invocation: each step is a separate argv-only process, so a profile
+// cannot inject shell syntax, and a failing step stops the sequence.
+type ProfileStepFinishedMsg struct {
+	// Label identifies the sequence, e.g. a provisioning mode name.
+	Label string
+	// StepIndex is the zero-based index of the step that just finished.
+	StepIndex int
+	// TotalSteps is the number of steps in the sequence.
+	TotalSteps int
+	// Err is non-nil when the step failed; the sequence is then aborted.
+	Err error
 }

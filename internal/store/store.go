@@ -184,6 +184,27 @@ func (s *Store) AddRecentVM(vmName string) error {
 	return s.Save()
 }
 
+// GetSetting returns a free-form persisted setting, or "" when unset.
+func (s *Store) GetSetting(key string) string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.state.CustomSettings == nil {
+		return ""
+	}
+	return s.state.CustomSettings[key]
+}
+
+// SetSetting stores a free-form setting and persists it.
+func (s *Store) SetSetting(key, value string) error {
+	s.mu.Lock()
+	if s.state.CustomSettings == nil {
+		s.state.CustomSettings = make(map[string]string)
+	}
+	s.state.CustomSettings[key] = value
+	s.mu.Unlock()
+	return s.Save()
+}
+
 // GetFavorites returns a copy of favorite VM names.
 func (s *Store) GetFavorites() []string {
 	s.mu.RLock()
