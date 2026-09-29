@@ -384,7 +384,7 @@ func (a App) View() string {
 	}
 	navBar := lipgloss.JoinHorizontal(lipgloss.Top, navItems...)
 
-	appHeader := theme.AppTitleStyle.Render(" LimaVM TUI ")
+	appHeader := theme.AppTitleStyle.Render(" LimaVM TUI Manager ")
 	var rightHeader string
 	if a.spinner.Active {
 		rightHeader = a.spinner.View()

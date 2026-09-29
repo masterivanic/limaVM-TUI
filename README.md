@@ -277,6 +277,25 @@ convention of most harness scripts.
 
 ---
 
+## To Run vm terminal in web interface
+
+1. Install tty
+
+```bash
+limactl shell instane-name -- sudo curl -L \
+  https://github.com/tsl0922/ttyd/releases/latest/download/ttyd.x86_64 \
+  -o /usr/local/bin/ttyd
+limactl shell instane-name -- sudo chmod +x /usr/local/bin/ttyd
+```
+2. Run tty
+```bash
+limactl shell ansible-rocky9 -- ttyd -p 7681 -W bash
+```
+
+3. Create service to persist terminal in web UI
+
+---
+
 ## Architecture
 
 ```
