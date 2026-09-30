@@ -251,63 +251,70 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Global key handling when modals are not intercepting
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		switch keyMsg.String() {
-		case "ctrl+c":
+		// When the active screen owns a text input (e.g. Create VM form),
+		// keys belong to the field; only ctrl+c stays global.
+		screenCaptures := a.activeScreen == common.ScreenCreateVM && a.createVMScreen.CapturesKeys()
+
+		if keyMsg.String() == "ctrl+c" {
 			a.quitting = true
 			return a, tea.Quit
+		}
 
-		case "?":
-			a.helpModal.Toggle()
-			return a, nil
+		if !screenCaptures {
+			switch keyMsg.String() {
+			case "?":
+				a.helpModal.Toggle()
+				return a, nil
 
-		case "1":
-			if a.activeScreen != common.ScreenDashboard {
-				a.activeScreen = common.ScreenDashboard
-				cmds = append(cmds, a.dashboardScreen.FetchVMsCmd())
-				return a, tea.Batch(cmds...)
-			}
-
-		case "2":
-			if a.activeScreen != common.ScreenNetworks {
-				a.activeScreen = common.ScreenNetworks
-				cmds = append(cmds, a.networksScreen.FetchNetworksCmd())
-				return a, tea.Batch(cmds...)
-			}
-
-		case "3":
-			if a.activeScreen != common.ScreenCreateVM {
-				a.activeScreen = common.ScreenCreateVM
-				if len(a.createVMScreen.Templates()) == 0 {
-					cmds = append(cmds, a.createVMScreen.LoadTemplatesCmd())
+			case "1":
+				if a.activeScreen != common.ScreenDashboard {
+					a.activeScreen = common.ScreenDashboard
+					cmds = append(cmds, a.dashboardScreen.FetchVMsCmd())
+					return a, tea.Batch(cmds...)
 				}
-				return a, tea.Batch(cmds...)
-			}
 
-		case "4":
-			if a.activeScreen != common.ScreenProfiles {
-				a.activeScreen = common.ScreenProfiles
-				return a, tea.Batch(cmds...)
-			}
+			case "2":
+				if a.activeScreen != common.ScreenNetworks {
+					a.activeScreen = common.ScreenNetworks
+					cmds = append(cmds, a.networksScreen.FetchNetworksCmd())
+					return a, tea.Batch(cmds...)
+				}
 
-		case "I":
-			return a, a.loadInfoCmd()
-		case "P":
-			a.confirmDialog.Show(
-				"Prune Garbage Objects",
-				"Prune unused Lima caches and temporary files?\n(Keeps objects referred by existing instances)",
-				"prune-garbage",
-			)
-			return a, nil
+			case "3":
+				if a.activeScreen != common.ScreenCreateVM {
+					a.activeScreen = common.ScreenCreateVM
+					if len(a.createVMScreen.Templates()) == 0 {
+						cmds = append(cmds, a.createVMScreen.LoadTemplatesCmd())
+					}
+					return a, tea.Batch(cmds...)
+				}
 
-		case "q":
-			// If on a sub-screen, return to dashboard; if on dashboard, quit
-			if a.activeScreen != common.ScreenDashboard {
-				a.activeScreen = common.ScreenDashboard
-				cmds = append(cmds, a.dashboardScreen.FetchVMsCmd())
-				return a, tea.Batch(cmds...)
+			case "4":
+				if a.activeScreen != common.ScreenProfiles {
+					a.activeScreen = common.ScreenProfiles
+					return a, tea.Batch(cmds...)
+				}
+
+			case "I":
+				return a, a.loadInfoCmd()
+			case "P":
+				a.confirmDialog.Show(
+					"Prune Garbage Objects",
+					"Prune unused Lima caches and temporary files?\n(Keeps objects referred by existing instances)",
+					"prune-garbage",
+				)
+				return a, nil
+
+			case "q":
+				// If on a sub-screen, return to dashboard; if on dashboard, quit
+				if a.activeScreen != common.ScreenDashboard {
+					a.activeScreen = common.ScreenDashboard
+					cmds = append(cmds, a.dashboardScreen.FetchVMsCmd())
+					return a, tea.Batch(cmds...)
+				}
+				a.quitting = true
+				return a, tea.Quit
 			}
-			a.quitting = true
-			return a, tea.Quit
 		}
 	}
 
