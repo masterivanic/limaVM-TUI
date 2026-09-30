@@ -452,11 +452,11 @@ func (a App) View() string {
 	footer := a.helpBar.Render(keys)
 
 	var layout []string
-	layout = append(layout, topBar, "\n", screenView)
+	layout = append(layout, topBar, screenView)
 	if toastLine != "" {
-		layout = append(layout, "\n", toastLine)
+		layout = append(layout, toastLine)
 	}
-	layout = append(layout, "\n", footer)
+	layout = append(layout, footer)
 
 	return lipgloss.JoinVertical(lipgloss.Left, layout...)
 }
