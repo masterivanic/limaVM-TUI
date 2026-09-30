@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/epel/limavm-tui/internal/limactl"
+	"github.com/epel/limavm-tui/internal/profile"
 	"github.com/epel/limavm-tui/internal/store"
 	"github.com/epel/limavm-tui/internal/theme"
 	"github.com/epel/limavm-tui/internal/ui/common"
@@ -17,6 +18,7 @@ import (
 	"github.com/epel/limavm-tui/internal/ui/dashboard"
 	"github.com/epel/limavm-tui/internal/ui/detail"
 	"github.com/epel/limavm-tui/internal/ui/networks"
+	"github.com/epel/limavm-tui/internal/ui/profiles"
 )
 
 // App is the root Bubble Tea model managing all screens and overlays.
@@ -30,6 +32,7 @@ type App struct {
 	detailScreen    detail.Model
 	createVMScreen  createvm.Model
 	networksScreen  networks.Model
+	profilesScreen  profiles.Model
 
 	// Overlays & Components
 	helpBar       components.HelpBar
@@ -46,7 +49,10 @@ type App struct {
 }
 
 // NewApp instantiates the root application model.
-func NewApp(client *limactl.Client, st *store.Store, pollInterval time.Duration) App {
+//
+// profileResults carries the outcome of profile discovery, including sources
+// that failed to load so the Profiles screen can surface them.
+func NewApp(client *limactl.Client, st *store.Store, pollInterval time.Duration, profileResults []profile.LoadResult) App {
 	return App{
 		client:          client,
 		store:           st,
@@ -55,6 +61,7 @@ func NewApp(client *limactl.Client, st *store.Store, pollInterval time.Duration)
 		detailScreen:    detail.New(client),
 		createVMScreen:  createvm.New(client, st),
 		networksScreen:  networks.New(client),
+		profilesScreen:  profiles.New(st, profileResults),
 		helpBar:         components.NewHelpBar(),
 		toast:           components.NewToastModel(),
 		confirmDialog:   components.NewConfirmDialog(),
@@ -93,6 +100,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.detailScreen.SetSize(msg.Width, msg.Height)
 		a.createVMScreen.SetSize(msg.Width, msg.Height)
 		a.networksScreen.SetSize(msg.Width, msg.Height)
+		a.profilesScreen.SetSize(msg.Width, msg.Height)
 		return a, nil
 
 	case common.LaunchExecMsg:
@@ -275,9 +283,14 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return a, tea.Batch(cmds...)
 			}
 
+		case "4":
+			if a.activeScreen != common.ScreenProfiles {
+				a.activeScreen = common.ScreenProfiles
+				return a, tea.Batch(cmds...)
+			}
+
 		case "I":
 			return a, a.loadInfoCmd()
-
 		case "P":
 			a.confirmDialog.Show(
 				"Prune Garbage Objects",
@@ -309,6 +322,8 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.createVMScreen, screenCmd = a.createVMScreen.Update(msg)
 	case common.ScreenNetworks:
 		a.networksScreen, screenCmd = a.networksScreen.Update(msg)
+	case common.ScreenProfiles:
+		a.profilesScreen, screenCmd = a.profilesScreen.Update(msg)
 	}
 	if screenCmd != nil {
 		cmds = append(cmds, screenCmd)
@@ -365,6 +380,7 @@ func (a App) View() string {
 		a.renderNavTab("1: VMs", a.activeScreen == common.ScreenDashboard),
 		a.renderNavTab("2: Networks", a.activeScreen == common.ScreenNetworks),
 		a.renderNavTab("3: Create VM", a.activeScreen == common.ScreenCreateVM),
+		a.renderNavTab("4: Profiles", a.activeScreen == common.ScreenProfiles),
 	}
 	navBar := lipgloss.JoinHorizontal(lipgloss.Top, navItems...)
 
@@ -398,6 +414,8 @@ func (a App) View() string {
 		screenView = a.createVMScreen.View()
 	case common.ScreenNetworks:
 		screenView = a.networksScreen.View()
+	case common.ScreenProfiles:
+		screenView = a.profilesScreen.View()
 	}
 
 	// 3. Modal Overlays (if active)
@@ -428,6 +446,8 @@ func (a App) View() string {
 		keys = a.createVMScreen.KeyHelp()
 	case common.ScreenNetworks:
 		keys = a.networksScreen.KeyHelp()
+	case common.ScreenProfiles:
+		keys = a.profilesScreen.KeyHelp()
 	}
 	footer := a.helpBar.Render(keys)
 

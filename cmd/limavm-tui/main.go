@@ -5,13 +5,25 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/epel/limavm-tui/internal/limactl"
+	"github.com/epel/limavm-tui/internal/profile"
 	"github.com/epel/limavm-tui/internal/store"
 	"github.com/epel/limavm-tui/internal/ui"
 )
+
+// stringList collects a flag that may be repeated on the command line.
+type stringList []string
+
+func (s *stringList) String() string { return strings.Join(*s, ",") }
+
+func (s *stringList) Set(v string) error {
+	*s = append(*s, v)
+	return nil
+}
 
 var (
 	version = "1.0.0"
@@ -24,8 +36,12 @@ func main() {
 		flagDataDir = flag.String("data-dir", "", "Path to state and configuration directory")
 		flagRefresh = flag.Duration("refresh", 3*time.Second, "Poll interval for VM and network status")
 		flagLog     = flag.String("log", "", "Optional log file path for debug logs")
+		flagConfig  = flag.String("config", "", "Path to config file (default ~/.config/limavm-tui/config.yaml)")
 		flagVersion = flag.Bool("version", false, "Print limavm-tui version and exit")
 	)
+
+	var flagProfiles stringList
+	flag.Var(&flagProfiles, "profile", "Path to a VM profile file or a directory containing "+profile.DefaultProfileFileName+" (repeatable)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Lima VM Manager — Terminal UI (TUI) for limactl\n\n")
@@ -68,8 +84,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Discover VM profiles from the explicit flags and the optional user
+	// config. Discovery never aborts startup: a broken or missing profile is
+	// reported inside the Profiles screen, so the rest of the TUI stays usable.
+	cfg, err := profile.LoadConfig(*flagConfig)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: %v\n", err)
+		cfg = &profile.Config{}
+	}
+	profileResults := profile.Discover(flagProfiles, cfg.ProfilePaths)
+	for _, r := range profileResults {
+		if r.Err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: profile %q could not be loaded: %v\n", r.Path, r.Err)
+		}
+	}
+
 	// Create root app model
-	app := ui.NewApp(client, st, *flagRefresh)
+	app := ui.NewApp(client, st, *flagRefresh, profileResults)
 
 	// Run full-screen Bubble Tea program
 	p := tea.NewProgram(
