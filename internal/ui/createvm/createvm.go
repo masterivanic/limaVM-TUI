@@ -126,6 +126,17 @@ func (m Model) IsLoading() bool {
 	return m.loading
 }
 
+// CapturesKeys reports whether a text input field currently owns the
+// keyboard, so the root app must not intercept global shortcuts (digits, q,
+// ?...) that would otherwise be typed into the field.
+func (m Model) CapturesKeys() bool {
+	switch m.focusedField {
+	case fieldName, fieldCustomPath, fieldCPUs, fieldMemory, fieldDisk:
+		return true
+	}
+	return false
+}
+
 // SetSize updates layout dimensions.
 func (m *Model) SetSize(w, h int) {
 	m.width = w
