@@ -1,4 +1,4 @@
-module github.com/epel/limavm-tui
+module github.com/masterivanic/limaVM-TUI
 
 go 1.26.8
 

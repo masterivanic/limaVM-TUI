@@ -45,8 +45,9 @@ Like `k9s` or `lazydocker`, `limavm-tui` is a single static binary, single proce
 ### From Source (Makefile)
 
 ```bash
-git clone https://github.com/epel/limavm-tui.git
-cd limavm-tui
+git clone https://github.com/masterivanic/limaVM-TUI.git
+cd limaVM-TUI
+
 
 # Build static binary to ./bin/limavm-tui
 make build

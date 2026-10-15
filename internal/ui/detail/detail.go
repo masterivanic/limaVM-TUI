@@ -12,10 +12,10 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/epel/limavm-tui/internal/limactl"
-	"github.com/epel/limavm-tui/internal/theme"
-	"github.com/epel/limavm-tui/internal/ui/common"
-	"github.com/epel/limavm-tui/internal/ui/components"
+	"github.com/masterivanic/limaVM-TUI/internal/limactl"
+	"github.com/masterivanic/limaVM-TUI/internal/theme"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/common"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/components"
 )
 
 type tabIndex int

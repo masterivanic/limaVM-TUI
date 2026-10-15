@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/epel/limavm-tui/internal/profile"
+	"github.com/masterivanic/limaVM-TUI/internal/profile"
 )
 
 // TestCommandExecutionContract locks the two guarantees the UI relies on when

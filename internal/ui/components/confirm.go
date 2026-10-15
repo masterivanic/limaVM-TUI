@@ -5,7 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/epel/limavm-tui/internal/theme"
+	"github.com/masterivanic/limaVM-TUI/internal/theme"
 )
 
 // ConfirmResultMsg is dispatched when a confirm dialog is answered.

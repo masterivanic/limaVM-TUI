@@ -15,11 +15,11 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/epel/limavm-tui/internal/profile"
-	"github.com/epel/limavm-tui/internal/store"
-	"github.com/epel/limavm-tui/internal/theme"
-	"github.com/epel/limavm-tui/internal/ui/common"
-	"github.com/epel/limavm-tui/internal/ui/components"
+	"github.com/masterivanic/limaVM-TUI/internal/profile"
+	"github.com/masterivanic/limaVM-TUI/internal/store"
+	"github.com/masterivanic/limaVM-TUI/internal/theme"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/common"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/components"
 )
 
 // lastProfileKey is the store key holding the most recently used profile path.
