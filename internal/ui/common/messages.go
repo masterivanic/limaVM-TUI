@@ -5,8 +5,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/epel/limavm-tui/internal/limactl"
-	"github.com/epel/limavm-tui/internal/ui/components"
+	"github.com/masterivanic/limaVM-TUI/internal/limactl"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/components"
 )
 
 // Screen identifies the currently active screen.

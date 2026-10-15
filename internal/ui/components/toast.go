@@ -4,7 +4,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/epel/limavm-tui/internal/theme"
+	"github.com/masterivanic/limaVM-TUI/internal/theme"
 )
 
 // ToastLevel represents the severity of a toast notification.

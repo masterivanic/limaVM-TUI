@@ -4,7 +4,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/epel/limavm-tui/internal/theme"
+	"github.com/masterivanic/limaVM-TUI/internal/theme"
 )
 
 // OpSpinner represents an active asynchronous operation with spinner.

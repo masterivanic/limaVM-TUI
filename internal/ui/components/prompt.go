@@ -6,7 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/epel/limavm-tui/internal/theme"
+	"github.com/masterivanic/limaVM-TUI/internal/theme"
 )
 
 // PromptResultMsg is dispatched when an input prompt is submitted or canceled.

@@ -3,7 +3,7 @@ package components
 import (
 	"strings"
 
-	"github.com/epel/limavm-tui/internal/theme"
+	"github.com/masterivanic/limaVM-TUI/internal/theme"
 )
 
 // KeyHelp represents a single keybinding hint.

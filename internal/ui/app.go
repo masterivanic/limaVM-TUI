@@ -8,17 +8,17 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/epel/limavm-tui/internal/limactl"
-	"github.com/epel/limavm-tui/internal/profile"
-	"github.com/epel/limavm-tui/internal/store"
-	"github.com/epel/limavm-tui/internal/theme"
-	"github.com/epel/limavm-tui/internal/ui/common"
-	"github.com/epel/limavm-tui/internal/ui/components"
-	"github.com/epel/limavm-tui/internal/ui/createvm"
-	"github.com/epel/limavm-tui/internal/ui/dashboard"
-	"github.com/epel/limavm-tui/internal/ui/detail"
-	"github.com/epel/limavm-tui/internal/ui/networks"
-	"github.com/epel/limavm-tui/internal/ui/profiles"
+	"github.com/masterivanic/limaVM-TUI/internal/limactl"
+	"github.com/masterivanic/limaVM-TUI/internal/profile"
+	"github.com/masterivanic/limaVM-TUI/internal/store"
+	"github.com/masterivanic/limaVM-TUI/internal/theme"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/common"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/components"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/createvm"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/dashboard"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/detail"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/networks"
+	"github.com/masterivanic/limaVM-TUI/internal/ui/profiles"
 )
 
 // App is the root Bubble Tea model managing all screens and overlays.
@@ -251,63 +251,70 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Global key handling when modals are not intercepting
 	if keyMsg, ok := msg.(tea.KeyMsg); ok {
-		switch keyMsg.String() {
-		case "ctrl+c":
+		// When the active screen owns a text input (e.g. Create VM form),
+		// keys belong to the field; only ctrl+c stays global.
+		screenCaptures := a.activeScreen == common.ScreenCreateVM && a.createVMScreen.CapturesKeys()
+
+		if keyMsg.String() == "ctrl+c" {
 			a.quitting = true
 			return a, tea.Quit
+		}
 
-		case "?":
-			a.helpModal.Toggle()
-			return a, nil
+		if !screenCaptures {
+			switch keyMsg.String() {
+			case "?":
+				a.helpModal.Toggle()
+				return a, nil
 
-		case "1":
-			if a.activeScreen != common.ScreenDashboard {
-				a.activeScreen = common.ScreenDashboard
-				cmds = append(cmds, a.dashboardScreen.FetchVMsCmd())
-				return a, tea.Batch(cmds...)
-			}
-
-		case "2":
-			if a.activeScreen != common.ScreenNetworks {
-				a.activeScreen = common.ScreenNetworks
-				cmds = append(cmds, a.networksScreen.FetchNetworksCmd())
-				return a, tea.Batch(cmds...)
-			}
-
-		case "3":
-			if a.activeScreen != common.ScreenCreateVM {
-				a.activeScreen = common.ScreenCreateVM
-				if len(a.createVMScreen.Templates()) == 0 {
-					cmds = append(cmds, a.createVMScreen.LoadTemplatesCmd())
+			case "1":
+				if a.activeScreen != common.ScreenDashboard {
+					a.activeScreen = common.ScreenDashboard
+					cmds = append(cmds, a.dashboardScreen.FetchVMsCmd())
+					return a, tea.Batch(cmds...)
 				}
-				return a, tea.Batch(cmds...)
-			}
 
-		case "4":
-			if a.activeScreen != common.ScreenProfiles {
-				a.activeScreen = common.ScreenProfiles
-				return a, tea.Batch(cmds...)
-			}
+			case "2":
+				if a.activeScreen != common.ScreenNetworks {
+					a.activeScreen = common.ScreenNetworks
+					cmds = append(cmds, a.networksScreen.FetchNetworksCmd())
+					return a, tea.Batch(cmds...)
+				}
 
-		case "I":
-			return a, a.loadInfoCmd()
-		case "P":
-			a.confirmDialog.Show(
-				"Prune Garbage Objects",
-				"Prune unused Lima caches and temporary files?\n(Keeps objects referred by existing instances)",
-				"prune-garbage",
-			)
-			return a, nil
+			case "3":
+				if a.activeScreen != common.ScreenCreateVM {
+					a.activeScreen = common.ScreenCreateVM
+					if len(a.createVMScreen.Templates()) == 0 {
+						cmds = append(cmds, a.createVMScreen.LoadTemplatesCmd())
+					}
+					return a, tea.Batch(cmds...)
+				}
 
-		case "q":
-			// If on a sub-screen, return to dashboard; if on dashboard, quit
-			if a.activeScreen != common.ScreenDashboard {
-				a.activeScreen = common.ScreenDashboard
-				cmds = append(cmds, a.dashboardScreen.FetchVMsCmd())
-				return a, tea.Batch(cmds...)
+			case "4":
+				if a.activeScreen != common.ScreenProfiles {
+					a.activeScreen = common.ScreenProfiles
+					return a, tea.Batch(cmds...)
+				}
+
+			case "I":
+				return a, a.loadInfoCmd()
+			case "P":
+				a.confirmDialog.Show(
+					"Prune Garbage Objects",
+					"Prune unused Lima caches and temporary files?\n(Keeps objects referred by existing instances)",
+					"prune-garbage",
+				)
+				return a, nil
+
+			case "q":
+				// If on a sub-screen, return to dashboard; if on dashboard, quit
+				if a.activeScreen != common.ScreenDashboard {
+					a.activeScreen = common.ScreenDashboard
+					cmds = append(cmds, a.dashboardScreen.FetchVMsCmd())
+					return a, tea.Batch(cmds...)
+				}
+				a.quitting = true
+				return a, tea.Quit
 			}
-			a.quitting = true
-			return a, tea.Quit
 		}
 	}
 
@@ -452,11 +459,11 @@ func (a App) View() string {
 	footer := a.helpBar.Render(keys)
 
 	var layout []string
-	layout = append(layout, topBar, "\n", screenView)
+	layout = append(layout, topBar, screenView)
 	if toastLine != "" {
-		layout = append(layout, "\n", toastLine)
+		layout = append(layout, toastLine)
 	}
-	layout = append(layout, "\n", footer)
+	layout = append(layout, footer)
 
 	return lipgloss.JoinVertical(lipgloss.Left, layout...)
 }

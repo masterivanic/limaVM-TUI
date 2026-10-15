@@ -9,10 +9,10 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/epel/limavm-tui/internal/limactl"
-	"github.com/epel/limavm-tui/internal/profile"
-	"github.com/epel/limavm-tui/internal/store"
-	"github.com/epel/limavm-tui/internal/ui"
+	"github.com/masterivanic/limaVM-TUI/internal/limactl"
+	"github.com/masterivanic/limaVM-TUI/internal/profile"
+	"github.com/masterivanic/limaVM-TUI/internal/store"
+	"github.com/masterivanic/limaVM-TUI/internal/ui"
 )
 
 // stringList collects a flag that may be repeated on the command line.

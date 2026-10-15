@@ -6,8 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/epel/limavm-tui/internal/limactl"
-	"github.com/epel/limavm-tui/internal/theme"
+	"github.com/masterivanic/limaVM-TUI/internal/limactl"
+	"github.com/masterivanic/limaVM-TUI/internal/theme"
 )
 
 // InfoModal displays diagnostic host information from limactl info.
